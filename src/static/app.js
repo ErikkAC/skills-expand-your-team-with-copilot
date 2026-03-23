@@ -472,6 +472,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Function to build the share URL for an activity
+  function getShareUrl(activityName) {
+    return `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(activityName)}`;
+  }
+
+  // Function to copy activity link to clipboard
+  function copyActivityLink(activityName, button) {
+    const shareUrl = getShareUrl(activityName);
+    const originalText = button.textContent;
+
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      button.textContent = "✓ Copied!";
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 2000);
+    }).catch(() => {
+      button.textContent = "✗ Failed";
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 2000);
+    });
+  }
+
+  // Build the HTML for the share buttons row
+  function buildShareButtonsHtml(name, description, formattedSchedule) {
+    const shareUrl = getShareUrl(name);
+    const tweetText = encodeURIComponent(`Check out "${name}" at Mergington High School! ${description}`);
+    const twitterHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
+    const facebookHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    const emailSubject = encodeURIComponent(`Join "${name}" at Mergington High School!`);
+    const emailBody = encodeURIComponent(`Hi!\n\nI wanted to share this extracurricular activity with you:\n\n${name}\n${description}\nSchedule: ${formattedSchedule}\n\nLearn more: ${shareUrl}`);
+    const emailHref = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+
+    return `
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <a class="share-btn share-twitter" href="${twitterHref}" target="_blank" rel="noopener noreferrer" title="Share on X (Twitter)">𝕏</a>
+        <a class="share-btn share-facebook" href="${facebookHref}" target="_blank" rel="noopener noreferrer" title="Share on Facebook">f</a>
+        <a class="share-btn share-email" href="${emailHref}" title="Share via Email">✉</a>
+        <button class="share-btn share-copy" data-activity="${name}" title="Copy link">🔗</button>
+      </div>
+    `;
+  }
+
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
@@ -569,6 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      ${buildShareButtonsHtml(name, details.description, formattedSchedule)}
     `;
 
     // Add click handlers for delete buttons
@@ -586,6 +631,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add click handler for copy link button
+    const copyButton = activityCard.querySelector(".share-copy");
+    copyButton.addEventListener("click", () => {
+      copyActivityLink(name, copyButton);
+    });
 
     activitiesList.appendChild(activityCard);
   }
